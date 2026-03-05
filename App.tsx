@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, StyleSheet, SafeAreaView } from 'react-native';
+import { StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HomeScreen } from './src/screens/HomeScreen';
 

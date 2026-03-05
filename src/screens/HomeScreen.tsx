@@ -1,51 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
     FlatList,
     StyleSheet,
     ActivityIndicator,
-    TouchableOpacity,
-    SafeAreaView,
-    Alert
+    TouchableOpacity
 } from 'react-native';
-import { requestLocationPermission, getCurrentLocation } from '../utils/location';
-import { fetchNearbyRestaurants } from '../services/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RestaurantCard } from '../components/RestaurantCard';
-import { Restaurant, Location } from '../types';
+import { Restaurant } from '../types';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { useRestaurants } from '../hooks/useRestaurants';
 
 export const HomeScreen = () => {
-    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [location, setLocation] = useState<Location | null>(null);
+    const { restaurants, location, loading } = useRestaurants();
     const [sortBy, setSortBy] = useState<'distance' | 'rating'>('distance');
-
-    useEffect(() => {
-        initApp();
-    }, []);
-
-    const initApp = async () => {
-        setLoading(true);
-        const hasPermission = await requestLocationPermission();
-
-        if (!hasPermission) {
-            Alert.alert('Permission Denied', 'Location permission is required to find nearby restaurants.');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const loc = await getCurrentLocation();
-            setLocation(loc);
-            // Fetch restaurants using user's location
-            const data = await fetchNearbyRestaurants(loc.latitude, loc.longitude);
-            setRestaurants(data);
-        } catch (_error) {
-            Alert.alert('Error', 'Could not fetch your location or nearby restaurants.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const mapRef = React.useRef<MapView>(null);
 
     const sortedRestaurants = [...restaurants].sort((a, b) => {
         if (sortBy === 'distance') {
@@ -53,6 +24,17 @@ export const HomeScreen = () => {
         }
         return b.rating - a.rating; // Descending for rating
     });
+
+    const handleRestaurantSelect = (restaurant: Restaurant) => {
+        if (mapRef.current) {
+            mapRef.current.animateToRegion({
+                latitude: restaurant.location.latitude,
+                longitude: restaurant.location.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            }, 1000);
+        }
+    };
 
     if (loading) {
         return (
@@ -71,6 +53,38 @@ export const HomeScreen = () => {
                     {location ? `Based on your current location` : 'Location unavailable'}
                 </Text>
             </View>
+
+            {location && (
+                <MapView
+                    ref={mapRef}
+                    provider={PROVIDER_GOOGLE}
+                    style={styles.map}
+                    initialRegion={{
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                        latitudeDelta: 0.05,
+                        longitudeDelta: 0.05,
+                    }}
+                    showsUserLocation={true}
+                >
+                    {sortedRestaurants.map((restaurant) => (
+                        <Marker
+                            key={restaurant.id}
+                            coordinate={{
+                                latitude: restaurant.location.latitude,
+                                longitude: restaurant.location.longitude,
+                            }}
+                        >
+                            <View style={styles.customMarker}>
+                                <View style={styles.markerBadge}>
+                                    <Text style={styles.markerText}>{restaurant.name}</Text>
+                                </View>
+                                <View style={styles.markerPin} />
+                            </View>
+                        </Marker>
+                    ))}
+                </MapView>
+            )}
 
             <View style={styles.filterContainer}>
                 <TouchableOpacity
@@ -95,7 +109,11 @@ export const HomeScreen = () => {
             <FlatList
                 data={sortedRestaurants}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <RestaurantCard restaurant={item} />}
+                renderItem={({ item }) => (
+                    <TouchableOpacity activeOpacity={0.8} onPress={() => handleRestaurantSelect(item)}>
+                        <RestaurantCard restaurant={item} />
+                    </TouchableOpacity>
+                )}
                 contentContainerStyle={styles.listContainer}
                 showsVerticalScrollIndicator={false}
             />
@@ -135,6 +153,10 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 4,
     },
+    map: {
+        width: '100%',
+        height: 250,
+    },
     filterContainer: {
         flexDirection: 'row',
         padding: 16,
@@ -161,5 +183,39 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 24,
+    },
+    customMarker: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    markerBadge: {
+        backgroundColor: '#fff',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        marginBottom: 4,
+    },
+    markerText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#ff6200',
+    },
+    markerPin: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#ff6200',
+        borderWidth: 2,
+        borderColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
 });

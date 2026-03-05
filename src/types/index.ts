@@ -13,8 +13,15 @@ export interface Restaurant {
     name: string;
     rating: number;
     reviewCount: number;
-    distance: number; // in miles or km
+    distance: number;
     location: Coordinates;
     image: string;
     cuisine: string[];
+    discount?: string;
+}
+
+export interface MenuItem {
+    id: string;
+    name: string;
+    price: number;
 }

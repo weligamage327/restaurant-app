@@ -1,15 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Restaurant } from '../types';
+import { MenuModal } from './MenuModal';
 
 interface RestaurantCardProps {
     restaurant: Restaurant;
 }
 
 export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) => {
+    const [menuVisible, setMenuVisible] = useState(false);
+
     return (
         <View style={styles.card}>
             <Image source={{ uri: restaurant.image }} style={styles.image} />
+            {restaurant.discount && (
+                <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>✨ {restaurant.discount}</Text>
+                </View>
+            )}
             <View style={styles.infoContainer}>
                 <View style={styles.headerRow}>
                     <Text style={styles.name} numberOfLines={1}>
@@ -23,9 +31,24 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) =>
                 </View>
                 <View style={styles.detailsRow}>
                     <Text style={styles.cuisineText}>{restaurant.cuisine.join(', ')}</Text>
-                    <Text style={styles.distanceText}>{restaurant.distance.toFixed(1)} mi</Text>
+                    <Text style={styles.distanceText}>{restaurant.distance.toFixed(1)} km</Text>
+                </View>
+
+                <View style={styles.actionRow}>
+                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
+                        <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>📍 Directions</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => setMenuVisible(true)}>
+                        <Text style={[styles.actionButtonText, styles.primaryButtonText]}>🍽️ Menu</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
+
+            <MenuModal
+                visible={menuVisible}
+                onClose={() => setMenuVisible(false)}
+                restaurantName={restaurant.name}
+            />
         </View>
     );
 };
@@ -47,6 +70,25 @@ const styles = StyleSheet.create({
         height: 150,
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
+    },
+    discountBadge: {
+        position: 'absolute',
+        top: 12,
+        left: 12,
+        backgroundColor: '#ff4757',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    discountText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 12,
     },
     infoContainer: {
         padding: 12,
@@ -95,5 +137,37 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         color: '#ff6200',
+    },
+    actionRow: {
+        flexDirection: 'row',
+        marginTop: 12,
+        gap: 12,
+    },
+    actionButton: {
+        flex: 1,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#e8e8e8',
+        alignItems: 'center',
+    },
+    secondaryButton: {
+        backgroundColor: '#fff0e5',
+        borderColor: '#ffebdb',
+    },
+    primaryButton: {
+        backgroundColor: '#ff6200',
+        borderColor: '#ff6200',
+    },
+    actionButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#444',
+    },
+    secondaryButtonText: {
+        color: '#ff6200',
+    },
+    primaryButtonText: {
+        color: '#fff',
     },
 });
