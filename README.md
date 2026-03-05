@@ -38,6 +38,9 @@ cd ios && pod install && cd ..
 ### 3. API Keys (Google Maps SDK)
 This project requires a Google Maps API Key to render the interactive `<MapView>` component.
 
+> [!WARNING]
+> **Security Notice:** API keys should never be hardcoded into native project files in a public repository due to automated scraping bots. It is highly recommended to implement a local `.env` parser or to explicitly add `AndroidManifest.xml` and `AppDelegate.swift` to the repository's `.gitignore` file prior to inserting any real API keys.
+
 **For iOS:** Open `ios/RestaurantApp/AppDelegate.swift` and replace the placeholder API Key:
 ```swift
 GMSServices.provideAPIKey("YOUR_KEY_HERE")
